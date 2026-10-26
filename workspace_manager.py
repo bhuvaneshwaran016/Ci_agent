@@ -2,42 +2,48 @@
 import shutil
 from pathlib import Path
 
-# Find the main project directory
 BASE_DIR = Path(__file__).parent
-
-# The original project that must remain unchanged
-SOURCE_DIR = BASE_DIR / "sample_project"
-
-# The separate copy where the AI can work
 WORKSPACE_DIR = BASE_DIR / "workspace"
 
 
-def create_workspace():
-    # Check whether the original project exists
-    if not SOURCE_DIR.exists():
+def create_workspace(source_dir):
+    source_dir = Path(source_dir).resolve()
+
+    # Validate the source project.
+    if not source_dir.exists() or not source_dir.is_dir():
         raise FileNotFoundError(
-            f"Original project not found: {SOURCE_DIR}"
+            f"Source project not found: {source_dir}"
         )
 
-    # Remove the previous workspace, if it exists
+    # Prevent copying the workspace into itself.
+    if source_dir == WORKSPACE_DIR.resolve():
+        raise ValueError(
+            "Source project cannot be the workspace itself."
+        )
+
+    # Remove the previous workspace.
     if WORKSPACE_DIR.exists():
         shutil.rmtree(WORKSPACE_DIR)
 
-    # Copy the original project into a new workspace
+    # Copy the selected project into an isolated workspace.
     shutil.copytree(
-        SOURCE_DIR,
+        source_dir,
         WORKSPACE_DIR,
         ignore=shutil.ignore_patterns(
+            ".git",
             "__pycache__",
             ".pytest_cache",
             ".venv",
+            "node_modules",
         ),
     )
 
     print("Separate workspace created successfully!")
-    print(f"Original project: {SOURCE_DIR}")
+    print(f"Source project: {source_dir}")
     print(f"AI workspace: {WORKSPACE_DIR}")
+
+    return WORKSPACE_DIR
 
 
 if __name__ == "__main__":
-    create_workspace()
+    create_workspace(BASE_DIR / "sample_project")

@@ -1,31 +1,37 @@
 
-# Python-generated files
+# Python bytecode and caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-build/
-dist/
-wheels/
-*.egg-info/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv/
 venv/
+env/
 
-# Local AI-generated workspace
-workspace/
-
-# Local investigation logs and backups
-investigation_logs/
-
-# Secrets and environment variables
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
 
-# Editor and operating-system files
+# Generated AI repair workspace
+/workspace/
+
+# Investigation outputs and generated logs
+/investigation_logs/
+*.log
+
+# Local repository clone (the agent's input repository)
+/repository_source/
+
+# IDE and operating system files
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db

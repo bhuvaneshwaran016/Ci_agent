@@ -4,15 +4,17 @@ import requests
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
-WORKSPACE_FILE = BASE_DIR / "workspace" / "app.py"
 BACKUP_DIR = BASE_DIR / "investigation_logs" / "backups"
 
 MODEL = "qwen2.5:3b"
 
 
-def generate_fix(error_log_path, attempt):
-    if not WORKSPACE_FILE.exists():
-        print("Workspace code not found.")
+def generate_fix(source_file, error_log_path, attempt):
+    source_file = Path(source_file)
+    error_log_path = Path(error_log_path)
+
+    if not source_file.exists():
+        print(f"Workspace code not found: {source_file}")
         return False
 
     if not error_log_path.exists():
@@ -20,7 +22,7 @@ def generate_fix(error_log_path, attempt):
         return False
 
     # Read the latest code and latest failure.
-    current_code = WORKSPACE_FILE.read_text(encoding="utf-8")
+    current_code = source_file.read_text(encoding="utf-8")
     error_log = error_log_path.read_text(encoding="utf-8")
 
     prompt = f"""
@@ -44,7 +46,10 @@ Latest test failure:
 {error_log}
 """
 
-    print(f"Asking Ollama to generate fix for attempt {attempt}...")
+    print(
+        f"Asking Ollama to fix {source_file.name}, "
+        f"attempt {attempt}..."
+    )
 
     try:
         response = requests.post(
@@ -81,7 +86,6 @@ Latest test failure:
         return False
 
     # Validate Python syntax before changing the workspace.
-    
     try:
         ast.parse(fixed_code)
 
@@ -95,22 +99,27 @@ Latest test failure:
             / f"ai_syntax_error_attempt_{attempt}.log"
         )
 
+        syntax_error_log.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         syntax_error_log.write_text(
             f"""
-    The AI generated invalid Python syntax.
+The AI generated invalid Python syntax.
 
-    Error details:
-    Line: {error.lineno}
-    Column: {error.offset}
-    Message: {error.msg}
-    Problematic line: {error.text}
+Error details:
+Line: {error.lineno}
+Column: {error.offset}
+Message: {error.msg}
+Problematic line: {error.text}
 
-    Current code:
-    {current_code}
+Current code:
+{current_code}
 
-    The generated code was rejected.
-    Please generate valid Python code.
-    """,
+The generated code was rejected.
+Please generate valid Python code.
+""",
             encoding="utf-8",
         )
 
@@ -119,23 +128,24 @@ Latest test failure:
 
         return "invalid_code"
 
-
     # Back up the current version before applying the new proposal.
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
     backup_file = (
-        BACKUP_DIR / f"app.py.before_attempt_{attempt}.py"
+        BACKUP_DIR
+        / f"{source_file.stem}.before_attempt_{attempt}.py"
     )
+
     backup_file.write_text(current_code, encoding="utf-8")
 
-    WORKSPACE_FILE.write_text(
+    source_file.write_text(
         fixed_code + "\n",
         encoding="utf-8",
     )
 
     print("Syntax validation passed.")
     print(f"Backup saved: {backup_file}")
-    print("New proposal saved to workspace/app.py")
+    print(f"New proposal saved to: {source_file}")
 
     return True
 
