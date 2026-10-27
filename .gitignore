@@ -35,3 +35,14 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local repository clones created by the agent
+/repository_source/
+/repository_source_new_*/
+
+# Generated AI repair workspace
+/workspace/
+# Local backup files
+*.backup
+
+/repository_source_new_*/
